@@ -1,0 +1,132 @@
+-- Question: As a method of increasing future sales, the company has decided to 
+-- give employee bonuses for exemplery performance in sales.
+-- Bonuses will be awarded to those employees who are responsible 
+-- for the 5 hightest sales amounts.
+-- How can we identify those employees?
+
+
+-- Answer: A list of employees who have orders with the 5 hightest sales amount.
+
+-- To find those employees, we need information of employees, 
+-- orders id, product id, and order amount. 
+-- Now, we need to identify which tables would have these information.
+
+
+SELECT *
+FROM employees -- Table with details of all the employees, but it does not have order information
+LIMIT 10; -- limiting the result to only 10 as we don't need to see all of the rows, for now
+
+SELECT *
+FROM orderdetails -- Table with details of all the orders with product id and quantity but no price
+LIMIT 10;
+
+SELECT *
+FROM orders -- Table with details of the order with employees information but no products
+LIMIT 10; 
+
+SELECT *
+FROM products -- Table with details of all the products and price per unit
+LIMIT 10;
+
+-- These 4 tables above can provide us with the answer.
+-- Now we need to move towards joining the tables to answer the business question.
+
+SELECT LastName,				-- from employees table
+	FirstName,				-- from employees table
+        orders.OrderID,			-- from order table
+        products.ProductID,		-- from products table
+        Quantity,				-- from orderitems table
+        products.UnitPrice		-- from products table
+FROM employees
+INNER JOIN orders				-- for joining tables with matching column information
+		ON employees.EmployeeID = orders.EmployeeID
+INNER JOIN orderdetails
+		ON orders.OrderID = orderdetails.OrderID
+INNER JOIN products
+		ON orderdetails.ProductID = products.ProductID
+ORDER BY lastname, firstname;
+
+-- Now we have all the columns and data to answer the business question.
+-- Next step, we need to calculate and aggregate data
+
+
+SELECT LastName, 
+		FirstName, 
+        orders.OrderID, 
+        products.ProductID,
+        Quantity,
+        UnitPrice,
+        SUM(quantity * UnitPrice) AS Sales_Amt	-- calculated field in a new column
+												-- calculate and aggregate total amount
+FROM employees
+INNER JOIN orders
+		ON employees.EmployeeID = orders.EmployeeID
+INNER JOIN orderdetails
+		ON orders.OrderID = orderdetails.OrderID
+INNER JOIN products
+		ON orderdetails.ProductID = products.ProductID
+GROUP BY orders.OrderID							-- summarizing by OrderID
+ORDER BY Sales_Amt DESC
+LIMIT 5;
+-- This query provides us with 5 highest sales amount for each order and
+-- with the names of 4 employees responsible.
+-- If we are looking for 5 different employees then we need to go even further.
+
+SELECT LastName, 
+		FirstName, 
+        orders.OrderID, 
+        products.ProductID,
+        Quantity,
+        UnitPrice,
+        SUM(quantity * unitprice) AS Sales_Amt
+FROM employees
+INNER JOIN orders
+		ON employees.EmployeeID = orders.EmployeeID
+INNER JOIN orderdetails
+		ON orders.OrderID = orderdetails.OrderID
+INNER JOIN products
+		ON orderdetails.ProductID = products.ProductID
+GROUP BY orders.OrderID
+HAVING orders.OrderID
+		IN (10865, 11030, 10981, 10372, 10817)
+ORDER BY Sales_Amt DESC;
+-- A list of 5 different employees with the highest sales amount.
+
+
+SELECT LastName, 
+		FirstName, 
+        SUM(Quantity) AS QuantitySold,
+        SUM(quantity * unitprice) AS Sales_Amt
+FROM employees
+INNER JOIN orders
+		ON employees.EmployeeID = orders.EmployeeID
+INNER JOIN orderdetails
+		ON orders.OrderID = orderdetails.OrderID
+INNER JOIN products
+		ON orderdetails.ProductID = products.ProductID
+GROUP BY lastname
+ORDER BY Sales_Amt DESC
+LIMIT 5;
+-- We will also provide a list of 5 employees with the highest sales amount and quantity sold
+-- so that business decision can be made appropriately.
+
+--
+--
+--
+--
+
+-- Lets find out the number of orders placed by each customer, alphabetically sorted.
+SELECT CompanyName, COUNT(OrderID) AS Number_of_Orders
+FROM customers
+INNER JOIN orders
+		ON customers.CustomerID = orders.CustomerID
+GROUP BY CompanyName
+ORDER BY CompanyName;
+
+-- Customers with largest number of order first.
+SELECT CompanyName, COUNT(OrderID) AS Number_of_Orders
+FROM customers
+INNER JOIN orders
+		ON customers.CustomerID = orders.CustomerID
+GROUP BY CompanyName
+ORDER BY Number_of_Orders DESC;
